@@ -4,6 +4,7 @@ import * as bc from 'bigint-conversion';
 import {KeyPair,PublicKey} from "rsa";
 const rsa = require('rsa');
 const sha = require('object-sha');
+const WebSocket = require('ws');
 
 let keyPair: KeyPair;
 
@@ -11,6 +12,7 @@ let bPubKey;
 
 let c;
 let po;
+let pr;
 
 async function firstAsync() {
     return rsa.generateRandomKeys();
@@ -51,17 +53,24 @@ exports.getMessage = async function (req: Request, res: Response){
         po = json.signature;
         c = body.msg;
         let mBody = JSON.parse(JSON.stringify({type: 2, src: 'B', dst: 'A', timestamp: Date.now()}));
-        let sign = '';
 
         await digest(mBody)
             .then(data => keyPair.privateKey.sign(bc.hexToBigint(data)))
-            .then(data => sign = bc.bigintToHex(data));
+            .then(data => pr = bc.bigintToHex(data));
 
         let jsonToSend = JSON.parse(JSON.stringify({
-            body: mBody, signature: sign,
+            body: mBody, signature: pr,
             pubKey: {e: bc.bigintToHex(keyPair.publicKey.e), n: bc.bigintToHex(keyPair.publicKey.n)}
         }));
 
+        console.log("All worked fine!");
+        console.log({
+            po:po,
+            pr:pr,
+            c:c
+        });
+
+        subscribe();
         return res.status(200).send(jsonToSend);
     } else {
         res.status(401).send({error:"Bad authentication"});
@@ -70,4 +79,19 @@ exports.getMessage = async function (req: Request, res: Response){
 
 async function digest(obj) {
     return await sha.digest(obj,'SHA-256');
+}
+
+function subscribe() {
+    const ws = new WebSocket('ws://localhost:50001');
+    ws.onopen = function () {
+        ws.send(JSON.stringify({
+            request: 'SUBSCRIBE',
+            message: '',
+            channel: 'key'
+        }));
+        ws.onmessage = function(event){
+            let data = JSON.parse(event.data);
+            console.log(data);
+        };
+    };
 }

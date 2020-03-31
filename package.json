@@ -22,6 +22,7 @@
     "typescript": "^3.8.2"
   },
   "devDependencies": {
-    "rsa": "file:../rsa"
+    "rsa": "file:../rsa",
+    "ws": "^7.2.3"
   }
 }
