@@ -2,14 +2,22 @@ import { Router } from 'express';
 
 const router: Router = Router();
 
-let controller = require('./../controllers/controller');
+let controller = require('../controllers/controller');
 
 /**
  * Cyber Security Endpoint
  */
 
-router.get('/pubKey', controller.getPubKey);
-router.post('/sign', controller.sign);
-router.post('/decrypt', controller.decrypt);
+/**
+ * RSA Service
+ */
+router.get('/rsa/pubKey', controller.getPubKey);
+router.post('/rsa/sign', controller.sign);
+router.post('/rsa/decrypt', controller.decrypt);
+
+/**
+ * Non-Repudiation Service
+ */
+router.post('/nr', controller.getMessage);
 
 export default router;
