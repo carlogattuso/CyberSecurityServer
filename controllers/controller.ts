@@ -5,6 +5,7 @@ import {KeyPair,PublicKey} from "rsa";
 const rsa = require('rsa');
 const sha = require('object-sha');
 const WebSocket = require('ws');
+const ws = new WebSocket('ws://localhost:50001');
 
 let keyPair: KeyPair;
 
@@ -71,6 +72,12 @@ exports.getMessage = async function (req: Request, res: Response){
         });
 
         subscribe();
+
+        ws.onmessage = function(event){
+            let data = JSON.parse(event.data);
+            console.log(data);
+        };
+
         return res.status(200).send(jsonToSend);
     } else {
         res.status(401).send({error:"Bad authentication"});
@@ -82,16 +89,11 @@ async function digest(obj) {
 }
 
 function subscribe() {
-    const ws = new WebSocket('ws://localhost:50001');
     ws.onopen = function () {
         ws.send(JSON.stringify({
             request: 'SUBSCRIBE',
             message: '',
             channel: 'key'
         }));
-        ws.onmessage = function(event){
-            let data = JSON.parse(event.data);
-            console.log(data);
-        };
     };
 }
