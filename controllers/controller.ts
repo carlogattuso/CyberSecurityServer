@@ -4,8 +4,6 @@ import * as bc from 'bigint-conversion';
 import {KeyPair,PublicKey} from "rsa";
 const rsa = require('rsa');
 const sha = require('object-sha');
-const WebSocket = require('ws');
-const ws = new WebSocket('ws://localhost:50001');
 
 let keyPair: KeyPair;
 
@@ -64,20 +62,6 @@ exports.getMessage = async function (req: Request, res: Response){
             pubKey: {e: bc.bigintToHex(keyPair.publicKey.e), n: bc.bigintToHex(keyPair.publicKey.n)}
         }));
 
-        console.log("All worked fine!");
-        console.log({
-            po:po,
-            pr:pr,
-            c:c
-        });
-
-        subscribe();
-
-        ws.onmessage = function(event){
-            let data = JSON.parse(event.data);
-            console.log(data);
-        };
-
         return res.status(200).send(jsonToSend);
     } else {
         res.status(401).send({error:"Bad authentication"});
@@ -88,12 +72,3 @@ async function digest(obj) {
     return await sha.digest(obj,'SHA-256');
 }
 
-function subscribe() {
-    ws.onopen = function () {
-        ws.send(JSON.stringify({
-            request: 'SUBSCRIBE',
-            message: '',
-            channel: 'key'
-        }));
-    };
-}
