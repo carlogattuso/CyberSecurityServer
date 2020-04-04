@@ -55,7 +55,7 @@ exports.getMessage = async function (req: Request, res: Response){
     aPubKey = new PublicKey(bc.hexToBigint(json.pubKey.e),bc.hexToBigint(json.pubKey.n));
     let proofDigest = bc.bigintToHex(await aPubKey.verify(bc.hexToBigint(json.signature)));
     let bodyDigest = await digest(body);
-    if(bodyDigest.trim() === proofDigest.trim()) {
+    if(bodyDigest.trim() === proofDigest.trim() && checkTimestamp(body.timestamp)) {
         po = json.signature;
         c = body.msg;
         let mBody = JSON.parse(JSON.stringify({type: 2, src: 'B', dst: 'A', timestamp: Date.now()}));
@@ -77,6 +77,11 @@ exports.getMessage = async function (req: Request, res: Response){
 
 async function digest(obj) {
     return await sha.digest(obj,'SHA-256');
+}
+
+function checkTimestamp(timestamp:number) {
+    const time = Date.now();
+    return (timestamp > (time - 300000) && timestamp < (time + 300000));
 }
 
 /**
