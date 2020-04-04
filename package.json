@@ -14,10 +14,13 @@
     "@types/express": "^4.17.2",
     "@types/node": "^13.7.6",
     "bigint-conversion": "^2.1.1",
+    "bigint-crypto-utils": "^2.5.2",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
+    "http": "0.0.1-security",
     "object-sha": "^1.0.5",
+    "socket.io-client": "^2.3.0",
     "tsc": "^1.20150623.0",
     "typescript": "^3.8.2"
   },

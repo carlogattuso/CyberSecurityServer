@@ -2,16 +2,23 @@
 import {Request, Response } from 'express';
 import * as bc from 'bigint-conversion';
 import {KeyPair,PublicKey} from "rsa";
+import * as http from 'http';
+import * as socket from 'socket.io-client';
 const rsa = require('rsa');
 const sha = require('object-sha');
 
 let keyPair: KeyPair;
 
-let bPubKey;
+let aPubKey;
+let TTPubKey;
+let key;
 
 let c;
 let po;
 let pr;
+let pkp;
+
+const io = socket.connect('http://localhost:50002', {reconnect: true});
 
 async function firstAsync() {
     return rsa.generateRandomKeys();
@@ -45,10 +52,10 @@ exports.decrypt = async function (req: Request, res: Response){
 exports.getMessage = async function (req: Request, res: Response){
     let json = req.body;
     let body = JSON.parse(JSON.stringify(json.body));
-    bPubKey = new PublicKey(bc.hexToBigint(json.pubKey.e),bc.hexToBigint(json.pubKey.n));
-    let proofDigest = bc.bigintToHex(await bPubKey.verify(bc.hexToBigint(json.signature)));
-    let bodyDigest = await sha.digest(body);
-    if(bodyDigest === proofDigest) {
+    aPubKey = new PublicKey(bc.hexToBigint(json.pubKey.e),bc.hexToBigint(json.pubKey.n));
+    let proofDigest = bc.bigintToHex(await aPubKey.verify(bc.hexToBigint(json.signature)));
+    let bodyDigest = await digest(body);
+    if(bodyDigest.trim() === proofDigest.trim()) {
         po = json.signature;
         c = body.msg;
         let mBody = JSON.parse(JSON.stringify({type: 2, src: 'B', dst: 'A', timestamp: Date.now()}));
@@ -71,4 +78,43 @@ exports.getMessage = async function (req: Request, res: Response){
 async function digest(obj) {
     return await sha.digest(obj,'SHA-256');
 }
+
+/**
+ * Listen the server to download the key when it is available
+ */
+io.on('get-key', () => {
+    let res;
+    http
+        .get('http://localhost:50001/nrk', resp => {
+            resp.on("data", data => {
+                res = JSON.parse(data);
+            });
+            resp.on("end", async () => {
+                let body = await JSON.parse(JSON.stringify(res.body));
+                TTPubKey = new PublicKey(bc.hexToBigint(res.pubKey.e), bc.hexToBigint(res.pubKey.n));
+                console.log(TTPubKey.verify(bc.hexToBigint(res.signature)));
+                let proofDigest = await bc.bigintToHex(TTPubKey.verify(bc.hexToBigint(res.signature)));
+                let bodyDigest = await digest(body);
+                console.log(proofDigest);
+                console.log(bodyDigest);
+                console.log(res.signature);
+                if(bodyDigest.trim() === proofDigest.trim()) {
+                    pkp = res.signature;
+                    key = body.msg;
+                    console.log("All data verified");
+                    console.log({
+                        po: po,
+                        pkp: pkp,
+                        key: key
+                    });
+                }
+                else{
+                    io.emit('get-key-error', {msg: "Bad authentication of proof of key publication"});
+                }
+            })
+        })
+        .on("error", err => {
+            console.log("Error: ", err.message);
+        });
+});
 
