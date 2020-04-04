@@ -48,7 +48,7 @@ exports.getMessage = async function (req: Request, res: Response){
     bPubKey = new PublicKey(bc.hexToBigint(json.pubKey.e),bc.hexToBigint(json.pubKey.n));
     let proofDigest = bc.bigintToHex(await bPubKey.verify(bc.hexToBigint(json.signature)));
     let bodyDigest = await sha.digest(body);
-    if(bodyDigest === proofDigest) {
+    if(bodyDigest === proofDigest && checkTimestamp(body.timestamp)) {
         po = json.signature;
         c = body.msg;
         let mBody = JSON.parse(JSON.stringify({type: 2, src: 'B', dst: 'A', timestamp: Date.now()}));
@@ -67,6 +67,11 @@ exports.getMessage = async function (req: Request, res: Response){
         res.status(401).send({error:"Bad authentication"});
     }
 };
+
+function checkTimestamp(timestamp:number) {
+    const time = Date.now();
+    return (timestamp > (time - 300000) && timestamp < (time + 300000));
+}
 
 async function digest(obj) {
     return await sha.digest(obj,'SHA-256');
