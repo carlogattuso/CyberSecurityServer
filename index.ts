@@ -3,6 +3,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import router from './routes/index';
 import cors from 'cors';
+let controller = require('./controllers/controller');
 
 const port: number = 50000;
 const app: express.Application = express();
