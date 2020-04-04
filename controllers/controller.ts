@@ -92,12 +92,8 @@ io.on('get-key', () => {
             resp.on("end", async () => {
                 let body = await JSON.parse(JSON.stringify(res.body));
                 TTPubKey = new PublicKey(bc.hexToBigint(res.pubKey.e), bc.hexToBigint(res.pubKey.n));
-                console.log(TTPubKey.verify(bc.hexToBigint(res.signature)));
                 let proofDigest = await bc.bigintToHex(TTPubKey.verify(bc.hexToBigint(res.signature)));
                 let bodyDigest = await digest(body);
-                console.log(proofDigest);
-                console.log(bodyDigest);
-                console.log(res.signature);
                 if(bodyDigest.trim() === proofDigest.trim()) {
                     pkp = res.signature;
                     key = body.msg;
