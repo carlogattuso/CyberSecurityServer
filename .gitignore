@@ -45,11 +45,4 @@ testem.log
 .DS_Store
 Thumbs.db
 
-# Project exclude paths
-/cyber_security/backend/controllers/controller.js
-/cyber_security/backend/routes/index.js
-/cyber_security/backend/index.js
-# Project exclude paths
-/controllers/controller.js
-/routes/index.js
-/index.js
+.js
