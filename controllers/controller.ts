@@ -6,12 +6,16 @@ import * as http from 'http';
 import * as socket from 'socket.io-client';
 const rsa = require('rsa');
 const sha = require('object-sha');
+const crypto = require("crypto");
+
 
 let keyPair: KeyPair;
 
 let aPubKey;
 let TTPubKey;
 let key;
+let iv;
+let message;
 
 let c;
 let po;
@@ -102,11 +106,14 @@ io.on('get-key', () => {
                 if(bodyDigest.trim() === proofDigest.trim()) {
                     pkp = res.signature;
                     key = body.msg;
+                    iv = body.iv;
+                    await decrypt(key, iv);
                     console.log("All data verified");
                     console.log({
                         po: po,
                         pkp: pkp,
-                        key: key
+                        key: key,
+                        message: message
                     });
                 }
                 else{
@@ -118,4 +125,12 @@ io.on('get-key', () => {
             console.log("Error: ", err.message);
         });
 });
+
+function decrypt(key, iv) {  
+   let encryptedText = Buffer.from(c, 'hex');
+   let decipher = crypto.createDecipheriv('aes-256-cbc', bc.hexToBuf(key), bc.hexToBuf(iv));
+   let decrypted = decipher.update(encryptedText);
+   decrypted = Buffer.concat([decrypted, decipher.final()]);
+   message = decrypted.toString();
+  }
 
