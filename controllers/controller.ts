@@ -4,6 +4,7 @@ import * as bc from 'bigint-conversion';
 import {KeyPair,PublicKey} from "rsa";
 import * as http from 'http';
 import * as socket from 'socket.io-client';
+
 const rsa = require('rsa');
 const sha = require('object-sha');
 const crypto = require("crypto");
@@ -21,6 +22,8 @@ let c;
 let po;
 let pr;
 let pkp;
+
+let shamir_key;
 
 const io = socket.connect('http://localhost:50002', {reconnect: true});
 
