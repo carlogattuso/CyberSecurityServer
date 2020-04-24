@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "rsa": "file:../rsa",
+    "shamirs-secret-sharing": "^1.0.1",
     "ws": "^7.2.3"
   }
 }

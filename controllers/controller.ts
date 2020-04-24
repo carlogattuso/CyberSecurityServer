@@ -4,9 +4,11 @@ import * as bc from 'bigint-conversion';
 import {KeyPair,PublicKey} from "rsa";
 import * as http from 'http';
 import * as socket from 'socket.io-client';
+import {bitLength} from "bigint-crypto-utils";
 
 const rsa = require('rsa');
 const sha = require('object-sha');
+const sss = require('shamirs-secret-sharing');
 const crypto = require("crypto");
 
 
@@ -23,7 +25,10 @@ let po;
 let pr;
 let pkp;
 
-let shamir_key;
+let cs : ArrayBuffer[] = [];
+let r;
+
+let cont = 0;
 
 const io = socket.connect('http://localhost:50002', {reconnect: true});
 
@@ -82,6 +87,25 @@ exports.getMessage = async function (req: Request, res: Response){
     }
 };
 
+exports.getSlices = async function (req: Request, res: Response){
+    let buffers = sss.split(await bc.bigintToBuf(keyPair.privateKey.d), { shares: 10, threshold: 4 });
+    let slices: Array<string> = [];
+    await buffers.forEach(buffer => slices.push(bc.bufToHex(buffer)));
+    return res.status(200).send({
+        slices
+    });
+};
+
+exports.sendSlice = async function (req: Request, res: Response) {
+    const slice = req.body.slice;
+    cs.push(bc.hexToBuf(slice));
+    cont++;
+    if(cont===4){
+        console.log("Key recovered");
+        r = await sss.combine(cs);
+    }
+};
+
 async function digest(obj) {
     return await sha.digest(obj,'SHA-256');
 }
@@ -135,5 +159,5 @@ function decrypt(key, iv) {
    let decrypted = decipher.update(encryptedText);
    decrypted = Buffer.concat([decrypted, decipher.final()]);
    message = decrypted.toString();
-  }
+}
 
