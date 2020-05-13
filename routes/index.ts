@@ -20,9 +20,4 @@ router.post('/rsa/decrypt', controller.decrypt);
  */
 router.post('/nr', controller.getMessage);
 
-/**
- * Secret Sharing Service
- */
-router.post('/ss/secret', controller.newSecret);
-
 export default router;

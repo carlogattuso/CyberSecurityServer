@@ -34,9 +34,12 @@ let pkp;
 let cs : ArrayBuffer[] = [];
 let r;
 
-let cont = 0;
+let clientCount = 0;
+let sliceCount = 0;
 
 const io = socket.connect('http://localhost:50002', {reconnect: true});
+
+let sockets = [];
 
 async function firstAsync() {
     return rsa.generateRandomKeys();
@@ -44,14 +47,30 @@ async function firstAsync() {
 
 firstAsync().then(data => keyPair = data);
 
-server.on('connection', (socket) => {
-    console.log("New user connected");
+server.on('connection', async (socket) => {
+    clientCount++;
+    if(clientCount==5) {
+        let secret:Buffer = crypto.randomBytes(256);
+        let slices:Array<string> = await sliceSecret(secret);
+        Object.keys(server.sockets.sockets).forEach((socket) => {
+            server.to(socket).emit('secret',{
+                slice:slices.pop(),
+                secret:bc.bufToHex(secret)
+            });
+        });
+    }
     socket.emit('hi',"Start sharing keys!");
-    socket.on('share', (data) => {
-        server.sockets.emit('secret', data);
+    socket.on('slice', async (slice) => {
+        sliceCount++;
+        cs.push(bc.hexToBuf(slice));
+        if(sliceCount==3) {
+            r = await sss.combine(cs);
+            server.emit('recovered',bc.bufToHex(r));
+            sliceCount=0;
+        }
     });
-    socket.on('disconnect', (reason) => {
-        console.log("User disconnected");
+    socket.on('disconnect', (socket) => {
+        clientCount--;
     })
 });
 
@@ -104,24 +123,12 @@ exports.getMessage = async function (req: Request, res: Response){
     }
 };
 
-exports.getSecret = async function (req: Request, res: Response){
-    let buffers = sss.split(await bc.bigintToBuf(keyPair.privateKey.d), { shares: 10, threshold: 4 });
+async function sliceSecret (secret:Uint8Array): Promise<Array<string>>{
+    let buffers = sss.split(secret, { shares: 5, threshold: 3 });
     let slices: Array<string> = [];
     await buffers.forEach(buffer => slices.push(bc.bufToHex(buffer)));
-    return res.status(200).send({
-        slices
-    });
-};
-
-exports.newSecret = async function (req: Request, res: Response) {
-    const slice = req.body.slice;
-    cs.push(bc.hexToBuf(slice));
-    cont++;
-    if(cont===4){
-        console.log("Key recovered");
-        r = await sss.combine(cs);
-    }
-};
+    return slices;
+}
 
 async function digest(obj) {
     return await sha.digest(obj,'SHA-256');
