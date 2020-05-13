@@ -22,7 +22,8 @@
     "object-sha": "^1.0.5",
     "socket.io-client": "^2.3.0",
     "tsc": "^1.20150623.0",
-    "typescript": "^3.8.2"
+    "typescript": "^3.8.2",
+    "socket.io": "^2.3.0"
   },
   "devDependencies": {
     "rsa": "file:../rsa",

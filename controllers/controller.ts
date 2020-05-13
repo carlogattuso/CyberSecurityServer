@@ -4,13 +4,19 @@ import * as bc from 'bigint-conversion';
 import {KeyPair,PublicKey} from "rsa";
 import * as http from 'http';
 import * as socket from 'socket.io-client';
-import {bitLength} from "bigint-crypto-utils";
 
 const rsa = require('rsa');
 const sha = require('object-sha');
 const sss = require('shamirs-secret-sharing');
 const crypto = require("crypto");
-
+const server  = require('socket.io')(50003, {
+    path: '',
+    serveClient: false,
+    // below are engine.IO options
+    pingInterval: 10000,
+    pingTimeout: 5000,
+    cookie: false
+});
 
 let keyPair: KeyPair;
 
@@ -37,6 +43,17 @@ async function firstAsync() {
 }
 
 firstAsync().then(data => keyPair = data);
+
+server.on('connection', (socket) => {
+    console.log("New user connected");
+    socket.emit('hi',"Start sharing keys!");
+    socket.on('share', (data) => {
+        server.sockets.emit('secret', data);
+    });
+    socket.on('disconnect', (reason) => {
+        console.log("User disconnected");
+    })
+});
 
 exports.getPubKey = async function (req: Request, res: Response){
     return res.status(200).send({
@@ -87,7 +104,7 @@ exports.getMessage = async function (req: Request, res: Response){
     }
 };
 
-exports.getSlices = async function (req: Request, res: Response){
+exports.getSecret = async function (req: Request, res: Response){
     let buffers = sss.split(await bc.bigintToBuf(keyPair.privateKey.d), { shares: 10, threshold: 4 });
     let slices: Array<string> = [];
     await buffers.forEach(buffer => slices.push(bc.bufToHex(buffer)));
@@ -96,7 +113,7 @@ exports.getSlices = async function (req: Request, res: Response){
     });
 };
 
-exports.sendSlice = async function (req: Request, res: Response) {
+exports.newSecret = async function (req: Request, res: Response) {
     const slice = req.body.slice;
     cs.push(bc.hexToBuf(slice));
     cont++;
@@ -160,4 +177,3 @@ function decrypt(key, iv) {
    decrypted = Buffer.concat([decrypted, decipher.final()]);
    message = decrypted.toString();
 }
-

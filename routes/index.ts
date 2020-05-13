@@ -23,7 +23,6 @@ router.post('/nr', controller.getMessage);
 /**
  * Secret Sharing Service
  */
-router.get('/ss/slices', controller.getSlices);
-router.post('/ss/combine', controller.sendSlice);
+router.post('/ss/secret', controller.newSecret);
 
 export default router;
