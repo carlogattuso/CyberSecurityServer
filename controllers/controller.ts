@@ -9,6 +9,8 @@ const rsa = require('rsa');
 const sha = require('object-sha');
 const sss = require('shamirs-secret-sharing');
 const crypto = require("crypto");
+const paillier = require("paillier-bigint");
+
 const server  = require('socket.io')(50003, {
     path: '',
     serveClient: false,
@@ -19,7 +21,7 @@ const server  = require('socket.io')(50003, {
 });
 
 let keyPair: KeyPair;
-
+let keyPairPaillier;
 let aPubKey;
 let TTPubKey;
 let key;
@@ -80,6 +82,32 @@ exports.getPubKey = async function (req: Request, res: Response){
         n: bc.bigintToHex(keyPair.publicKey.n)
     });
 };
+/**
+ * Get Paillier Key
+ */
+exports.getPallierPubKey = async function (req: Request, res: Response){
+    try {
+      keyPairPaillier = await paillier.generateRandomKeys(512);
+      res.status(200).send({
+        n: bc.bigintToHex(keyPairPaillier["publicKey"]["n"]),
+        g: bc.bigintToHex(keyPairPaillier["publicKey"]["g"])
+      })
+    } catch (err) {
+      res.status(500).send({ message: err })
+    }
+  }
+
+  exports.postHomomorphic = async function (req: Request, res: Response){
+    try {
+      const msg = bc.hexToBigint(req.body.totalEncrypted);
+      console.log(msg);
+      const decrypt =  await keyPairPaillier["privateKey"].decrypt(msg);
+      console.log(decrypt);
+      res.status(200).send({ msg: bc.bigintToHex(decrypt) })
+    } catch (err) {
+      res.status(500).send({ message: err })
+    }
+  }
 
 exports.sign = async function (req: Request, res: Response){
     const message = req.body.message;

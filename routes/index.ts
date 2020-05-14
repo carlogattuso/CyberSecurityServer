@@ -20,4 +20,10 @@ router.post('/rsa/decrypt', controller.decrypt);
  */
 router.post('/nr', controller.getMessage);
 
+/**
+ * Homomorphism Service
+ */
+router.get('/paillier/pubKey', controller.getPallierPubKey);
+router.post('/paillier/decrypt', controller.postHomomorphic);
+
 export default router;
