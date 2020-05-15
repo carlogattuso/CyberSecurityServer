@@ -95,19 +95,19 @@ exports.getPallierPubKey = async function (req: Request, res: Response){
     } catch (err) {
       res.status(500).send({ message: err })
     }
-  }
+};
 
-  exports.postHomomorphic = async function (req: Request, res: Response){
+exports.postHomomorphic = async function (req: Request, res: Response){
     try {
-      const msg = bc.hexToBigint(req.body.totalEncrypted);
-      console.log(msg);
-      const decrypt =  await keyPairPaillier["privateKey"].decrypt(msg);
-      console.log(decrypt);
-      res.status(200).send({ msg: bc.bigintToHex(decrypt) })
+        const msg = bc.hexToBigint(req.body.totalEncrypted);
+        console.log(msg);
+        const decrypt =  await keyPairPaillier["privateKey"].decrypt(msg);
+        console.log(decrypt);
+        res.status(200).send({ msg: bc.bigintToHex(decrypt) })
     } catch (err) {
-      res.status(500).send({ message: err })
-    }
-  }
+        res.status(500).send({ message: err })
+        }
+};
 
 exports.sign = async function (req: Request, res: Response){
     const message = req.body.message;
