@@ -44,7 +44,7 @@ const io = socket.connect('http://localhost:50002', {reconnect: true});
 let sockets = [];
 
 async function firstAsync() {
-    return rsa.generateRandomKeys();
+    return rsa.generateRandomKeys(512);
 }
 
 firstAsync().then(data => keyPair = data);
@@ -111,7 +111,11 @@ exports.getPallierPubKey = async function (req: Request, res: Response){
 
 exports.sign = async function (req: Request, res: Response){
     const message = req.body.message;
+    console.log("Blind message sent by the client: ", message);
     let signature = keyPair.privateKey.sign(bc.hexToBigint(message));
+    console.log("Blind signature message: ", {
+        signature: bc.bigintToHex(signature)
+    });
     return res.status(200).send({
         signature: bc.bigintToHex(signature)
     });
@@ -119,7 +123,11 @@ exports.sign = async function (req: Request, res: Response){
 
 exports.decrypt = async function (req: Request, res: Response){
     const crypto = req.body.crypto;
+    console.log("Encrypted message sent by the client: ", crypto);
     let clearText = keyPair.privateKey.decrypt(bc.hexToBigint(crypto));
+    console.log("Decrypted message: ", {
+        clearText: bc.bigintToHex(clearText)
+    });
     return res.status(200).send({
         clearText: bc.bigintToHex(clearText)
     });
