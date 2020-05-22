@@ -51,9 +51,14 @@ firstAsync().then(data => keyPair = data);
 
 server.on('connection', async (socket) => {
     clientCount++;
+    console.log("New user connected, total: "+clientCount);
     if(clientCount==5) {
-        let secret:Buffer = crypto.randomBytes(256);
+        let secret:Buffer = crypto.randomBytes(64);
+        console.log("New secret generated: ");
+        console.log({secret: bc.bufToHex(secret)});
         let slices:Array<string> = await sliceSecret(secret);
+        console.log("Sliced secret: ");
+        console.log({slices:slices});
         Object.keys(server.sockets.sockets).forEach((socket) => {
             server.to(socket).emit('secret',{
                 slice:slices.pop(),
@@ -64,15 +69,21 @@ server.on('connection', async (socket) => {
     socket.emit('hi',"Start sharing keys!");
     socket.on('slice', async (slice) => {
         sliceCount++;
+        console.log("New slice has arrived: ");
+        console.log({slice: slice});
+        console.log("There are "+sliceCount+" slices yet.");
         cs.push(bc.hexToBuf(slice));
         if(sliceCount==3) {
             r = await sss.combine(cs);
+            console.log("We can recover now the secret:");
+            console.log({secret: bc.bufToHex(r)});
             server.emit('recovered',bc.bufToHex(r));
             sliceCount=0;
         }
     });
     socket.on('disconnect', (socket) => {
         clientCount--;
+        console.log("New user disconnected, total: "+clientCount);
     })
 });
 
@@ -152,6 +163,7 @@ exports.getMessage = async function (req: Request, res: Response){
 };
 
 async function sliceSecret (secret:Uint8Array): Promise<Array<string>>{
+    console.log('Slicing new secret --> Shares: 5, Threshold: 3');
     let buffers = sss.split(secret, { shares: 5, threshold: 3 });
     let slices: Array<string> = [];
     await buffers.forEach(buffer => slices.push(bc.bufToHex(buffer)));
