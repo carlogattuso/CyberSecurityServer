@@ -99,10 +99,18 @@ exports.getPallierPubKey = async function (req: Request, res: Response){
 
 exports.postHomomorphic = async function (req: Request, res: Response){
     try {
+        console.log('------------------------------------------------');
         const msg = bc.hexToBigint(req.body.totalEncrypted);
-        console.log(msg);
+        console.log("Sum encrypted votes: " + msg);
         const decrypt =  await keyPairPaillier["privateKey"].decrypt(msg);
-        console.log(decrypt);
+        // let zeroFilled = (new Array(decrypt.length()).join('0') + x).substr(-decrypt.length());
+        const votes = ("00" + decrypt).slice(-3);
+        console.log("Sum votes: " + votes);
+        var digits = decrypt.toString().split('');
+        console.log("Votes A: " + digits[0]);
+        console.log("Votes B: " + digits[1]);
+        console.log("Votes C: " + digits[2]);
+        console.log('------------------------------------------------');
         res.status(200).send({ msg: bc.bigintToHex(decrypt) })
     } catch (err) {
         res.status(500).send({ message: err })
